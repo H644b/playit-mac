@@ -152,6 +152,45 @@ jobs:
           asset_name: ${{ matrix.platform.artifact }}.msi
           asset_content_type: application/octet-stream
 
+  build_macos:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+
+      - name: Install toml-cli
+        run: cargo install toml-cli
+
+      - name: Set playit version
+        shell: bash
+        run: echo "PLAYIT_VERSION=$(toml get ./packages/playit-cli/Cargo.toml package.version | sed 's/\"//g')" >> "$GITHUB_ENV"
+
+      - name: Build macOS binaries
+        run: cargo build --release --package playit-cli --package playitd
+
+      - name: Build Intel macOS CLI binary
+        run: cargo build --release --target x86_64-apple-darwin --package playit-cli
+
+      - name: Package macOS artifacts
+        shell: bash
+        run: bash ./mac-deploy.sh
+
+      - name: Upload macOS release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            "./build-deploy/playit-${{ env.PLAYIT_VERSION }}.dmg#playit-${{ env.PLAYIT_VERSION }}.dmg" \
+            "./build-deploy/playit-${{ env.PLAYIT_VERSION }}-apple-m1#playit-${{ env.PLAYIT_VERSION }}-apple-m1" \
+            "./build-deploy/playit-${{ env.PLAYIT_VERSION }}-apple-intel#playit-${{ env.PLAYIT_VERSION }}-apple-intel" \
+            --clobber
+
   build_docker:
     runs-on: ubuntu-latest
     needs: [build_linux]
