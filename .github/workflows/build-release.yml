@@ -152,6 +152,68 @@ jobs:
           asset_name: ${{ matrix.platform.artifact }}.msi
           asset_content_type: application/octet-stream
 
+  build_macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+
+      - name: Install toml-cli
+        run: cargo install toml-cli
+
+      - name: Set playit version
+        shell: bash
+        run: echo "PLAYIT_VERSION=$(toml get ./packages/playit-cli/Cargo.toml package.version | sed 's/\"//g')" >> "$GITHUB_ENV"
+
+      - name: Build macOS binaries
+        run: cargo build --release --package playit-cli --package playitd
+
+      - name: Build Intel macOS CLI binary
+        run: cargo build --release --target x86_64-apple-darwin --package playit-cli
+
+      - name: Package macOS artifacts
+        shell: bash
+        run: bash ./mac-deploy.sh
+
+      - name: Upload .dmg
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ./build-deploy/playit-${{ env.PLAYIT_VERSION }}.dmg
+          asset_name: playit-${{ env.PLAYIT_VERSION }}.dmg
+          asset_content_type: application/octet-stream
+
+      - name: Upload Apple Silicon CLI binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ./build-deploy/playit-${{ env.PLAYIT_VERSION }}-apple-m1
+          asset_name: playit-${{ env.PLAYIT_VERSION }}-apple-m1
+          asset_content_type: application/octet-stream
+
+      - name: Upload Intel CLI binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ./build-deploy/playit-${{ env.PLAYIT_VERSION }}-apple-intel
+          asset_name: playit-${{ env.PLAYIT_VERSION }}-apple-intel
+          asset_content_type: application/octet-stream
+
   build_docker:
     runs-on: ubuntu-latest
     needs: [build_linux]
