@@ -180,35 +180,16 @@ jobs:
         shell: bash
         run: bash ./mac-deploy.sh
 
-      - name: Upload .dmg
-        uses: actions/upload-release-asset@v1
+      - name: Upload macOS release assets
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./build-deploy/playit-${{ env.PLAYIT_VERSION }}.dmg
-          asset_name: playit-${{ env.PLAYIT_VERSION }}.dmg
-          asset_content_type: application/octet-stream
-
-      - name: Upload Apple Silicon CLI binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./build-deploy/playit-${{ env.PLAYIT_VERSION }}-apple-m1
-          asset_name: playit-${{ env.PLAYIT_VERSION }}-apple-m1
-          asset_content_type: application/octet-stream
-
-      - name: Upload Intel CLI binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./build-deploy/playit-${{ env.PLAYIT_VERSION }}-apple-intel
-          asset_name: playit-${{ env.PLAYIT_VERSION }}-apple-intel
-          asset_content_type: application/octet-stream
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            "./build-deploy/playit-${{ env.PLAYIT_VERSION }}.dmg#playit-${{ env.PLAYIT_VERSION }}.dmg" \
+            "./build-deploy/playit-${{ env.PLAYIT_VERSION }}-apple-m1#playit-${{ env.PLAYIT_VERSION }}-apple-m1" \
+            "./build-deploy/playit-${{ env.PLAYIT_VERSION }}-apple-intel#playit-${{ env.PLAYIT_VERSION }}-apple-intel" \
+            --clobber
 
   build_docker:
     runs-on: ubuntu-latest
