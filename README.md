@@ -5,6 +5,7 @@
 * Offical Downloads: https://playit.gg/download
 * Releases: https://github.com/playit-cloud/playit-agent/releases
 
+* MacOS Builds now
 ---
 
 ** Non deprecated releases of the playit program:
